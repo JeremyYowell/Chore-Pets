@@ -1,0 +1,117 @@
+{
+  "type": "APL",
+  "version": "1.6",
+  "theme": "dark",
+  "import": [
+    { "name": "alexa-layouts", "version": "1.5.0" },
+    { "name": "alexa-styles",  "version": "1.5.0" }
+  ],
+  "mainTemplate": {
+    "parameters": ["petSelectData"],
+    "item": {
+      "type": "Container",
+      "width": "100vw",
+      "height": "100vh",
+      "backgroundColor": "#111827",
+      "direction": "column",
+      "items": [
+
+        {
+          "type": "Container",
+          "backgroundColor": "#1f2937",
+          "paddingLeft": "28dp",
+          "paddingRight": "28dp",
+          "paddingTop": "16dp",
+          "paddingBottom": "16dp",
+          "direction": "column",
+          "alignItems": "center",
+          "items": [
+            {
+              "type": "Text",
+              "text": "Choose a Pet for ${petSelectData.childName}!",
+              "fontSize": "28dp",
+              "fontWeight": "700",
+              "color": "#F9FAFB",
+              "textAlign": "center"
+            },
+            {
+              "type": "Text",
+              "text": "Or say: cat, dog, hamster, or panda",
+              "fontSize": "16dp",
+              "color": "#9CA3AF",
+              "textAlign": "center",
+              "marginTop": "4dp"
+            }
+          ]
+        },
+
+        {
+          "type": "Container",
+          "grow": 1,
+          "direction": "row",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "paddingLeft": "40dp",
+          "paddingRight": "40dp",
+          "paddingTop": "24dp",
+          "paddingBottom": "24dp",
+          "items": [
+            {
+              "type": "Sequence",
+              "scrollDirection": "horizontal",
+              "width": "100%",
+              "height": "100%",
+              "alignItems": "center",
+              "data": "${petSelectData.pets}",
+              "item": {
+                "type": "TouchWrapper",
+                "marginLeft": "20dp",
+                "marginRight": "20dp",
+                "onPress": {
+                  "type": "SendEvent",
+                  "arguments": ["selectPet", 0, "${data.type}"]
+                },
+                "item": {
+                  "type": "Container",
+                  "backgroundColor": "#1e3a5f",
+                  "borderRadius": "20dp",
+                  "borderWidth": "2dp",
+                  "borderColor": "#3b82f6",
+                  "width": "220dp",
+                  "height": "300dp",
+                  "direction": "column",
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                  "paddingTop": "24dp",
+                  "paddingBottom": "24dp",
+                  "paddingLeft": "16dp",
+                  "paddingRight": "16dp",
+                  "items": [
+                    {
+                      "type": "Image",
+                      "source": "${data.image}",
+                      "width": "160dp",
+                      "height": "180dp",
+                      "scale": "best-fit",
+                      "align": "center"
+                    },
+                    {
+                      "type": "Text",
+                      "text": "${data.label}",
+                      "fontSize": "24dp",
+                      "fontWeight": "700",
+                      "color": "#F9FAFB",
+                      "textAlign": "center",
+                      "marginTop": "16dp"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+
+      ]
+    }
+  }
+}

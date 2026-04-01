@@ -1,0 +1,5 @@
+php/config.local.php
+assets/__pycache__/
+*.pyc
+Thumbs.db
+Desktop.ini

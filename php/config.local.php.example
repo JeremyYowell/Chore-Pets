@@ -1,0 +1,11 @@
+<?php
+
+return [
+    'ALEXA_SKILL_ID' => 'amzn1.ask.skill.XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX',
+    'VERIFY_SIGNATURES' => false,
+    'DB_HOST' => 'db.space-monkey.org',
+    'DB_NAME' => 'choreskill',
+    'DB_USER' => 'your_db_user',
+    'DB_PASS' => 'your_db_password',
+    'ASSETS_URL' => 'https://chores.space-monkey.org/chores/assets',
+];

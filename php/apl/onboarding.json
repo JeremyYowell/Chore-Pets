@@ -1,0 +1,365 @@
+{
+  "type": "APL",
+  "version": "1.6",
+  "theme": "dark",
+  "import": [
+    { "name": "alexa-layouts", "version": "1.5.0" },
+    { "name": "alexa-styles",  "version": "1.5.0" }
+  ],
+  "mainTemplate": {
+    "parameters": ["onboardingData"],
+    "item": {
+      "type": "Container",
+      "width": "100vw",
+      "height": "100vh",
+      "backgroundColor": "#111827",
+      "items": [
+
+        {
+          "when": "${onboardingData.step == 'start'}",
+          "type": "Container",
+          "width": "100vw",
+          "height": "100vh",
+          "backgroundColor": "#111827",
+          "direction": "column",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "items": [
+
+            {
+              "type": "Text",
+              "text": "⭐",
+              "fontSize": "72dp",
+              "textAlign": "center",
+              "marginBottom": "8dp"
+            },
+
+            {
+              "type": "Text",
+              "text": "Welcome to Chore Pets!",
+              "fontSize": "36dp",
+              "fontWeight": "700",
+              "color": "#FCD34D",
+              "textAlign": "center",
+              "marginBottom": "16dp"
+            },
+
+            {
+              "type": "Container",
+              "backgroundColor": "#1f2937",
+              "borderRadius": "16dp",
+              "paddingLeft": "40dp",
+              "paddingRight": "40dp",
+              "paddingTop": "32dp",
+              "paddingBottom": "32dp",
+              "width": "700dp",
+              "items": [
+
+                {
+                  "type": "Text",
+                  "text": "Let's get set up! I'll ask you a few quick questions.",
+                  "fontSize": "22dp",
+                  "color": "#F9FAFB",
+                  "textAlign": "center",
+                  "marginBottom": "32dp"
+                },
+
+                {
+                  "type": "Container",
+                  "direction": "row",
+                  "alignItems": "flex-start",
+                  "marginBottom": "20dp",
+                  "items": [
+                    {
+                      "type": "Container",
+                      "width": "36dp",
+                      "height": "36dp",
+                      "borderRadius": "18dp",
+                      "backgroundColor": "#3B82F6",
+                      "alignItems": "center",
+                      "justifyContent": "center",
+                      "marginRight": "16dp",
+                      "items": [{ "type": "Text", "text": "1", "fontSize": "18dp", "fontWeight": "700", "color": "#FFFFFF" }]
+                    },
+                    { "type": "Text", "text": "Tell me your child's name", "fontSize": "20dp", "color": "#D1D5DB", "grow": 1 }
+                  ]
+                },
+
+                {
+                  "type": "Container",
+                  "direction": "row",
+                  "alignItems": "flex-start",
+                  "marginBottom": "20dp",
+                  "items": [
+                    {
+                      "type": "Container",
+                      "width": "36dp",
+                      "height": "36dp",
+                      "borderRadius": "18dp",
+                      "backgroundColor": "#3B82F6",
+                      "alignItems": "center",
+                      "justifyContent": "center",
+                      "marginRight": "16dp",
+                      "items": [{ "type": "Text", "text": "2", "fontSize": "18dp", "fontWeight": "700", "color": "#FFFFFF" }]
+                    },
+                    { "type": "Text", "text": "List their chores (say 'done' when finished)", "fontSize": "20dp", "color": "#D1D5DB", "grow": 1 }
+                  ]
+                },
+
+                {
+                  "type": "Container",
+                  "direction": "row",
+                  "alignItems": "flex-start",
+                  "items": [
+                    {
+                      "type": "Container",
+                      "width": "36dp",
+                      "height": "36dp",
+                      "borderRadius": "18dp",
+                      "backgroundColor": "#3B82F6",
+                      "alignItems": "center",
+                      "justifyContent": "center",
+                      "marginRight": "16dp",
+                      "items": [{ "type": "Text", "text": "3", "fontSize": "18dp", "fontWeight": "700", "color": "#FFFFFF" }]
+                    },
+                    { "type": "Text", "text": "Pick a virtual pet to keep them motivated!", "fontSize": "20dp", "color": "#D1D5DB", "grow": 1 }
+                  ]
+                }
+
+              ]
+            },
+
+            {
+              "type": "Text",
+              "text": "Say your first child's name to begin",
+              "fontSize": "20dp",
+              "color": "#6B7280",
+              "textAlign": "center",
+              "marginTop": "24dp"
+            },
+
+            {
+              "type": "Container",
+              "position": "absolute",
+              "bottom": "0",
+              "left": "0",
+              "width": "100vw",
+              "height": "90dp",
+              "clipToBounds": true,
+              "items": [
+                {
+                  "type": "Container",
+                  "id": "petMarchRow",
+                  "direction": "row",
+                  "position": "absolute",
+                  "bottom": "0",
+                  "left": "0",
+                  "onMount": [
+                    {
+                      "type": "AnimateItem",
+                      "duration": 8000,
+                      "repeatCount": -1,
+                      "easing": "linear",
+                      "value": [
+                        {
+                          "property": "transform",
+                          "from": [{ "translateX": 0 }],
+                          "to":   [{ "translateX": -320 }]
+                        }
+                      ]
+                    }
+                  ],
+                  "items": [
+                    { "type": "Image", "source": "${onboardingData.assetsUrl}/pets/cat-happy.png",     "width": "80dp", "height": "80dp", "scale": "best-fit" },
+                    { "type": "Image", "source": "${onboardingData.assetsUrl}/pets/dog-happy.png",     "width": "80dp", "height": "80dp", "scale": "best-fit" },
+                    { "type": "Image", "source": "${onboardingData.assetsUrl}/pets/hamster-happy.png", "width": "80dp", "height": "80dp", "scale": "best-fit" },
+                    { "type": "Image", "source": "${onboardingData.assetsUrl}/pets/panda-happy.png",   "width": "80dp", "height": "80dp", "scale": "best-fit" },
+                    { "type": "Image", "source": "${onboardingData.assetsUrl}/pets/cat-happy.png",     "width": "80dp", "height": "80dp", "scale": "best-fit" },
+                    { "type": "Image", "source": "${onboardingData.assetsUrl}/pets/dog-happy.png",     "width": "80dp", "height": "80dp", "scale": "best-fit" },
+                    { "type": "Image", "source": "${onboardingData.assetsUrl}/pets/hamster-happy.png", "width": "80dp", "height": "80dp", "scale": "best-fit" },
+                    { "type": "Image", "source": "${onboardingData.assetsUrl}/pets/panda-happy.png",   "width": "80dp", "height": "80dp", "scale": "best-fit" },
+                    { "type": "Image", "source": "${onboardingData.assetsUrl}/pets/cat-happy.png",     "width": "80dp", "height": "80dp", "scale": "best-fit" },
+                    { "type": "Image", "source": "${onboardingData.assetsUrl}/pets/dog-happy.png",     "width": "80dp", "height": "80dp", "scale": "best-fit" },
+                    { "type": "Image", "source": "${onboardingData.assetsUrl}/pets/hamster-happy.png", "width": "80dp", "height": "80dp", "scale": "best-fit" },
+                    { "type": "Image", "source": "${onboardingData.assetsUrl}/pets/panda-happy.png",   "width": "80dp", "height": "80dp", "scale": "best-fit" },
+                    { "type": "Image", "source": "${onboardingData.assetsUrl}/pets/cat-happy.png",     "width": "80dp", "height": "80dp", "scale": "best-fit" },
+                    { "type": "Image", "source": "${onboardingData.assetsUrl}/pets/dog-happy.png",     "width": "80dp", "height": "80dp", "scale": "best-fit" },
+                    { "type": "Image", "source": "${onboardingData.assetsUrl}/pets/hamster-happy.png", "width": "80dp", "height": "80dp", "scale": "best-fit" },
+                    { "type": "Image", "source": "${onboardingData.assetsUrl}/pets/panda-happy.png",   "width": "80dp", "height": "80dp", "scale": "best-fit" }
+                  ]
+                }
+              ]
+            }
+
+          ]
+        },
+
+        {
+          "when": "${onboardingData.step == 'adding_chores'}",
+          "type": "Container",
+          "width": "100vw",
+          "height": "100vh",
+          "backgroundColor": "#111827",
+          "direction": "row",
+          "items": [
+
+            {
+              "type": "Container",
+              "grow": 1,
+              "direction": "column",
+              "paddingLeft": "40dp",
+              "paddingRight": "24dp",
+              "paddingTop": "36dp",
+              "paddingBottom": "24dp",
+              "items": [
+
+                {
+                  "type": "Container",
+                  "direction": "row",
+                  "alignItems": "center",
+                  "marginBottom": "8dp",
+                  "items": [
+                    { "type": "Text", "text": "🧒", "fontSize": "36dp", "marginRight": "12dp" },
+                    {
+                      "type": "Container",
+                      "grow": 1,
+                      "items": [
+                        { "type": "Text", "text": "Setting up", "fontSize": "16dp", "color": "#6B7280", "fontWeight": "400" },
+                        { "type": "Text", "text": "${onboardingData.childName}", "fontSize": "36dp", "fontWeight": "700", "color": "#FCD34D" }
+                      ]
+                    }
+                  ]
+                },
+
+                {
+                  "type": "Container",
+                  "direction": "row",
+                  "alignItems": "center",
+                  "marginBottom": "28dp",
+                  "items": [
+                    { "type": "Container", "width": "24dp", "height": "6dp", "borderRadius": "3dp", "backgroundColor": "#10B981", "marginRight": "6dp" },
+                    { "type": "Container", "width": "24dp", "height": "6dp", "borderRadius": "3dp", "backgroundColor": "#3B82F6", "marginRight": "6dp" },
+                    { "type": "Container", "width": "24dp", "height": "6dp", "borderRadius": "3dp", "backgroundColor": "#374151", "marginRight": "12dp" },
+                    { "type": "Text", "text": "Step 2 of 3 — Adding chores", "fontSize": "14dp", "color": "#6B7280" }
+                  ]
+                },
+
+                {
+                  "type": "Text",
+                  "text": "${onboardingData.choreCount == 0 ? 'No chores yet — say one now!' : onboardingData.choreCount == 1 ? '1 chore added:' : onboardingData.choreCount + ' chores added:'}",
+                  "fontSize": "18dp",
+                  "color": "#9CA3AF",
+                  "marginBottom": "16dp"
+                },
+
+                {
+                  "type": "ScrollView",
+                  "grow": 1,
+                  "items": [
+                    {
+                      "type": "Container",
+                      "data": "${onboardingData.chores}",
+                      "numbered": true,
+                      "item": {
+                        "type": "Container",
+                        "direction": "row",
+                        "alignItems": "center",
+                        "backgroundColor": "#1F2937",
+                        "borderRadius": "10dp",
+                        "paddingLeft": "16dp",
+                        "paddingRight": "16dp",
+                        "paddingTop": "12dp",
+                        "paddingBottom": "12dp",
+                        "marginBottom": "8dp",
+                        "items": [
+                          { "type": "Text", "text": "✓", "fontSize": "20dp", "color": "#10B981", "marginRight": "12dp" },
+                          { "type": "Text", "text": "${data}", "fontSize": "20dp", "color": "#F9FAFB", "grow": 1 }
+                        ]
+                      }
+                    }
+                  ]
+                },
+
+                {
+                  "type": "Container",
+                  "backgroundColor": "#1F2937",
+                  "borderRadius": "10dp",
+                  "paddingLeft": "20dp",
+                  "paddingRight": "20dp",
+                  "paddingTop": "14dp",
+                  "paddingBottom": "14dp",
+                  "marginTop": "16dp",
+                  "items": [
+                    { "type": "Text", "text": "Say a chore to add it, or say done when finished", "fontSize": "16dp", "color": "#9CA3AF" }
+                  ]
+                }
+
+              ]
+            },
+
+            {
+              "when": "${onboardingData.childrenComplete.length > 0}",
+              "type": "Container",
+              "width": "260dp",
+              "backgroundColor": "#1F2937",
+              "direction": "column",
+              "paddingLeft": "20dp",
+              "paddingRight": "20dp",
+              "paddingTop": "36dp",
+              "paddingBottom": "24dp",
+              "items": [
+
+                {
+                  "type": "Text",
+                  "text": "Already set up",
+                  "fontSize": "16dp",
+                  "color": "#6B7280",
+                  "marginBottom": "16dp",
+                  "fontWeight": "600"
+                },
+
+                {
+                  "type": "Container",
+                  "data": "${onboardingData.childrenComplete}",
+                  "item": {
+                    "type": "Container",
+                    "direction": "row",
+                    "alignItems": "center",
+                    "backgroundColor": "#111827",
+                    "borderRadius": "10dp",
+                    "paddingLeft": "12dp",
+                    "paddingRight": "12dp",
+                    "paddingTop": "10dp",
+                    "paddingBottom": "10dp",
+                    "marginBottom": "10dp",
+                    "items": [
+                      {
+                        "type": "Image",
+                        "source": "${onboardingData.assetsUrl}/pets/${data.petType}-happy.png",
+                        "width": "40dp",
+                        "height": "40dp",
+                        "scale": "best-fit",
+                        "marginRight": "10dp"
+                      },
+                      {
+                        "type": "Container",
+                        "grow": 1,
+                        "items": [
+                          { "type": "Text", "text": "${data.name}", "fontSize": "16dp", "color": "#F9FAFB", "fontWeight": "600" },
+                          { "type": "Text", "text": "Ready!", "fontSize": "12dp", "color": "#10B981" }
+                        ]
+                      }
+                    ]
+                  }
+                }
+
+              ]
+            }
+
+          ]
+        }
+
+      ]
+    }
+  }
+}

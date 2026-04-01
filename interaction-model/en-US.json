@@ -1,0 +1,331 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "chore pets",
+      "intents": [
+
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.YesIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NoIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+
+        {
+          "name": "ProvideChildNameIntent",
+          "slots": [
+            {
+              "name": "childName",
+              "type": "AMAZON.FirstName"
+            }
+          ],
+          "samples": [
+            "{childName}",
+            "my child's name is {childName}",
+            "her name is {childName}",
+            "his name is {childName}",
+            "their name is {childName}",
+            "it's {childName}",
+            "the name is {childName}"
+          ]
+        },
+
+        {
+          "name": "AddChoreIntent",
+          "slots": [
+            {
+              "name": "choreName",
+              "type": "ChoreDescription"
+            }
+          ],
+          "samples": [
+            "{choreName}",
+            "add {choreName}",
+            "add chore {choreName}",
+            "the chore is {choreName}",
+            "one chore is {choreName}",
+            "another chore is {choreName}",
+            "a chore is {choreName}",
+            "chore {choreName}",
+            "how about {choreName}",
+            "also {choreName}",
+            "and {choreName}"
+          ]
+        },
+
+        {
+          "name": "DoneAddingChoresIntent",
+          "slots": [],
+          "samples": [
+            "done",
+            "that's all",
+            "that's it",
+            "finished",
+            "all done",
+            "no more",
+            "no more chores",
+            "I'm done",
+            "I'm finished",
+            "those are all the chores"
+          ]
+        },
+
+        {
+          "name": "SelectPetIntent",
+          "slots": [
+            {
+              "name": "petType",
+              "type": "PetType"
+            }
+          ],
+          "samples": [
+            "{petType}",
+            "I want a {petType}",
+            "pick a {petType}",
+            "choose a {petType}",
+            "I choose {petType}",
+            "I'd like a {petType}",
+            "we want a {petType}",
+            "let's get a {petType}"
+          ]
+        },
+
+        {
+          "name": "AddChildIntent",
+          "slots": [],
+          "samples": [
+            "add a child",
+            "add another child",
+            "add a new child",
+            "add someone",
+            "add another kid",
+            "add a new kid",
+            "I want to add a child",
+            "I want to add another child",
+            "set up another child",
+            "set up a new child"
+          ]
+        },
+
+        {
+          "name": "SelectChildIntent",
+          "slots": [
+            {
+              "name": "childName",
+              "type": "AMAZON.FirstName"
+            }
+          ],
+          "samples": [
+            "{childName}",
+            "chores for {childName}",
+            "show chores for {childName}",
+            "show me chores for {childName}",
+            "open chores for {childName}",
+            "show {childName}",
+            "switch to {childName}",
+            "go to {childName}",
+            "{childName} please"
+          ]
+        },
+
+        {
+          "name": "NamePetIntent",
+          "slots": [
+            {
+              "name": "childName",
+              "type": "AMAZON.FirstName"
+            },
+            {
+              "name": "petName",
+              "type": "AMAZON.FirstName"
+            }
+          ],
+          "samples": [
+            "name the pet for {childName} {petName}",
+            "call the pet for {childName} {petName}",
+            "the pet for {childName} is named {petName}",
+            "name my pet {petName}",
+            "call my pet {petName}",
+            "my pet name is {petName}",
+            "I want to name my pet {petName}",
+            "the pet name is {petName}"
+          ]
+        },
+
+        {
+          "name": "CheckPetIntent",
+          "slots": [
+            {
+              "name": "childName",
+              "type": "AMAZON.FirstName"
+            }
+          ],
+          "samples": [
+            "how is the pet for {childName}",
+            "how is the pet for {childName} doing",
+            "check the pet for {childName}",
+            "what is the pet for {childName} doing",
+            "how is my pet",
+            "how is my pet doing",
+            "check my pet",
+            "pet status for {childName}",
+            "is the pet for {childName} happy",
+            "how happy is the pet for {childName}"
+          ]
+        },
+
+        {
+          "name": "MarkChoreIntent",
+          "slots": [
+            {
+              "name": "childName",
+              "type": "AMAZON.FirstName"
+            },
+            {
+              "name": "choreName",
+              "type": "ChoreDescription"
+            }
+          ],
+          "samples": [
+            "mark {choreName} done for {childName}",
+            "mark {choreName} complete for {childName}",
+            "{childName} finished {choreName}",
+            "{childName} did {choreName}",
+            "{childName} completed {choreName}",
+            "mark {choreName} done",
+            "mark {choreName} complete",
+            "I finished {choreName}",
+            "I did {choreName}",
+            "I completed {choreName}",
+            "done with {choreName}",
+            "finished {choreName}"
+          ]
+        },
+
+        {
+          "name": "ListChoresIntent",
+          "slots": [
+            {
+              "name": "childName",
+              "type": "AMAZON.FirstName"
+            }
+          ],
+          "samples": [
+            "what are the chores for {childName}",
+            "list chores for {childName}",
+            "read chores for {childName}",
+            "what chores does {childName} have",
+            "read my chores",
+            "list my chores",
+            "what are my chores",
+            "what chores do I have"
+          ]
+        }
+
+      ],
+      "types": [
+        {
+          "name": "ChoreDescription",
+          "values": [
+            { "name": { "value": "make your bed" } },
+            { "name": { "value": "brush your teeth" } },
+            { "name": { "value": "clean your room" } },
+            { "name": { "value": "take out the trash" } },
+            { "name": { "value": "do your homework" } },
+            { "name": { "value": "feed the dog" } },
+            { "name": { "value": "feed the cat" } },
+            { "name": { "value": "wash the dishes" } },
+            { "name": { "value": "load the dishwasher" } },
+            { "name": { "value": "unload the dishwasher" } },
+            { "name": { "value": "pick up your toys" } },
+            { "name": { "value": "get dressed" } },
+            { "name": { "value": "set the table" } },
+            { "name": { "value": "clear the table" } },
+            { "name": { "value": "take a shower" } },
+            { "name": { "value": "take a bath" } },
+            { "name": { "value": "get ready for school" } },
+            { "name": { "value": "pack your backpack" } },
+            { "name": { "value": "water the plants" } },
+            { "name": { "value": "vacuum the floor" } },
+            { "name": { "value": "sweep the floor" } },
+            { "name": { "value": "fold your clothes" } },
+            { "name": { "value": "put away your clothes" } },
+            { "name": { "value": "put away your laundry" } },
+            { "name": { "value": "read for twenty minutes" } },
+            { "name": { "value": "read a book" } },
+            { "name": { "value": "practice piano" } },
+            { "name": { "value": "practice reading" } },
+            { "name": { "value": "clean the bathroom" } },
+            { "name": { "value": "wipe down the counters" } },
+            { "name": { "value": "take out the recycling" } },
+            { "name": { "value": "walk the dog" } },
+            { "name": { "value": "put away your shoes" } },
+            { "name": { "value": "hang up your backpack" } },
+            { "name": { "value": "empty your backpack" } },
+            { "name": { "value": "clean up after yourself" } },
+            { "name": { "value": "wash your hands" } },
+            { "name": { "value": "brush your hair" } },
+            { "name": { "value": "get your pajamas on" } },
+            { "name": { "value": "turn off the lights" } }
+          ]
+        },
+        {
+          "name": "PetType",
+          "values": [
+            {
+              "id": "cat",
+              "name": {
+                "value": "cat",
+                "synonyms": ["kitty", "kitten", "cats"]
+              }
+            },
+            {
+              "id": "dog",
+              "name": {
+                "value": "dog",
+                "synonyms": ["puppy", "doggy", "dogs", "pup"]
+              }
+            },
+            {
+              "id": "hamster",
+              "name": {
+                "value": "hamster",
+                "synonyms": ["hamsters", "hammy"]
+              }
+            },
+            {
+              "id": "panda",
+              "name": {
+                "value": "panda",
+                "synonyms": ["pandas", "panda bear", "panda bears"]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "prompts": []
+  }
+}
