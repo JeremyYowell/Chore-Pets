@@ -80,12 +80,13 @@
               "width": "340dp",
               "direction": "column",
               "alignItems": "center",
-              "justifyContent": "center",
+              "justifyContent": "start",
               "backgroundColor": "#1a2744",
-              "paddingTop": "24dp",
-              "paddingBottom": "24dp",
+              "paddingTop": "16dp",
+              "paddingBottom": "16dp",
               "paddingLeft": "20dp",
               "paddingRight": "20dp",
+              "scrollDirection": "vertical",
               "items": [
 
                 {
@@ -101,8 +102,8 @@
                 {
                   "type": "Image",
                   "source": "${childData.petImage}",
-                  "width": "200dp",
-                  "height": "220dp",
+                  "width": "180dp",
+                  "height": "190dp",
                   "scale": "best-fit",
                   "align": "center"
                 },
@@ -110,10 +111,10 @@
                 {
                   "type": "Text",
                   "text": "${childData.stateLabel}",
-                  "fontSize": "16dp",
+                  "fontSize": "15dp",
                   "color": "#D1D5DB",
                   "textAlign": "center",
-                  "marginTop": "12dp"
+                  "marginTop": "8dp"
                 },
 
                 {
@@ -123,17 +124,225 @@
                   "borderRadius": "12dp",
                   "paddingLeft": "16dp",
                   "paddingRight": "16dp",
-                  "paddingTop": "10dp",
-                  "paddingBottom": "10dp",
-                  "marginTop": "16dp",
+                  "paddingTop": "8dp",
+                  "paddingBottom": "8dp",
+                  "marginTop": "10dp",
+                  "width": "100%",
                   "items": [
                     {
                       "type": "Text",
                       "text": "🎉 Name your pet!\nSay 'name my pet'",
-                      "fontSize": "14dp",
+                      "fontSize": "13dp",
                       "color": "#EDE9FE",
                       "textAlign": "center"
                     }
+                  ]
+                },
+
+                {
+                  "type": "Container",
+                  "marginTop": "12dp",
+                  "width": "100%",
+                  "items": [
+
+                    {
+                      "type": "Container",
+                      "when": "${childData.interactionsUnlocked && !childData.allInteractionsDone}",
+                      "backgroundColor": "#4C1D95",
+                      "borderRadius": "10dp",
+                      "paddingLeft": "10dp",
+                      "paddingRight": "10dp",
+                      "paddingTop": "7dp",
+                      "paddingBottom": "7dp",
+                      "marginBottom": "10dp",
+                      "width": "100%",
+                      "items": [{
+                        "type": "Text",
+                        "text": "✨ Thriving! Pet rewards unlocked!",
+                        "fontSize": "12dp",
+                        "color": "#DDD6FE",
+                        "textAlign": "center"
+                      }]
+                    },
+
+                    {
+                      "type": "Container",
+                      "when": "${childData.allInteractionsDone}",
+                      "backgroundColor": "#166534",
+                      "borderRadius": "10dp",
+                      "paddingLeft": "10dp",
+                      "paddingRight": "10dp",
+                      "paddingTop": "7dp",
+                      "paddingBottom": "7dp",
+                      "marginBottom": "10dp",
+                      "width": "100%",
+                      "items": [{
+                        "type": "Text",
+                        "text": "🌟 All done! See you tomorrow!",
+                        "fontSize": "12dp",
+                        "color": "#86EFAC",
+                        "textAlign": "center"
+                      }]
+                    },
+
+                    {
+                      "type": "Container",
+                      "direction": "row",
+                      "justifyContent": "spaceAround",
+                      "alignItems": "center",
+                      "width": "100%",
+                      "items": [
+
+                        {
+                          "type": "Container",
+                          "when": "${!childData.interactionsUnlocked}",
+                          "width": "82dp",
+                          "height": "72dp",
+                          "backgroundColor": "#1f2937",
+                          "borderRadius": "12dp",
+                          "borderWidth": "1dp",
+                          "borderColor": "#374151",
+                          "alignItems": "center",
+                          "justifyContent": "center",
+                          "items": [
+                            { "type": "Text", "text": "🔒", "fontSize": "20dp", "textAlign": "center" },
+                            { "type": "Text", "text": "Feed", "fontSize": "11dp", "color": "#4B5563", "textAlign": "center", "marginTop": "2dp" }
+                          ]
+                        },
+                        {
+                          "type": "TouchWrapper",
+                          "when": "${childData.interactionsUnlocked && !childData.interactions.fed}",
+                          "onPress": { "type": "SendEvent", "arguments": ["feedPet", "${childData.childId}"] },
+                          "item": {
+                            "type": "Container",
+                            "width": "82dp",
+                            "height": "72dp",
+                            "backgroundColor": "#EA580C",
+                            "borderRadius": "12dp",
+                            "alignItems": "center",
+                            "justifyContent": "center",
+                            "items": [
+                              { "type": "Text", "text": "🍖", "fontSize": "20dp", "textAlign": "center" },
+                              { "type": "Text", "text": "Feed", "fontSize": "12dp", "color": "#FFF7ED", "fontWeight": "600", "textAlign": "center", "marginTop": "2dp" }
+                            ]
+                          }
+                        },
+                        {
+                          "type": "Container",
+                          "when": "${childData.interactionsUnlocked && childData.interactions.fed}",
+                          "width": "82dp",
+                          "height": "72dp",
+                          "backgroundColor": "#166534",
+                          "borderRadius": "12dp",
+                          "alignItems": "center",
+                          "justifyContent": "center",
+                          "items": [
+                            { "type": "Text", "text": "✅", "fontSize": "20dp", "textAlign": "center" },
+                            { "type": "Text", "text": "Fed!", "fontSize": "12dp", "color": "#86EFAC", "fontWeight": "600", "textAlign": "center", "marginTop": "2dp" }
+                          ]
+                        },
+
+                        {
+                          "type": "Container",
+                          "when": "${!childData.interactionsUnlocked}",
+                          "width": "82dp",
+                          "height": "72dp",
+                          "backgroundColor": "#1f2937",
+                          "borderRadius": "12dp",
+                          "borderWidth": "1dp",
+                          "borderColor": "#374151",
+                          "alignItems": "center",
+                          "justifyContent": "center",
+                          "items": [
+                            { "type": "Text", "text": "🔒", "fontSize": "20dp", "textAlign": "center" },
+                            { "type": "Text", "text": "Water", "fontSize": "11dp", "color": "#4B5563", "textAlign": "center", "marginTop": "2dp" }
+                          ]
+                        },
+                        {
+                          "type": "TouchWrapper",
+                          "when": "${childData.interactionsUnlocked && !childData.interactions.watered}",
+                          "onPress": { "type": "SendEvent", "arguments": ["waterPet", "${childData.childId}"] },
+                          "item": {
+                            "type": "Container",
+                            "width": "82dp",
+                            "height": "72dp",
+                            "backgroundColor": "#0369A1",
+                            "borderRadius": "12dp",
+                            "alignItems": "center",
+                            "justifyContent": "center",
+                            "items": [
+                              { "type": "Text", "text": "💧", "fontSize": "20dp", "textAlign": "center" },
+                              { "type": "Text", "text": "Water", "fontSize": "12dp", "color": "#E0F2FE", "fontWeight": "600", "textAlign": "center", "marginTop": "2dp" }
+                            ]
+                          }
+                        },
+                        {
+                          "type": "Container",
+                          "when": "${childData.interactionsUnlocked && childData.interactions.watered}",
+                          "width": "82dp",
+                          "height": "72dp",
+                          "backgroundColor": "#166534",
+                          "borderRadius": "12dp",
+                          "alignItems": "center",
+                          "justifyContent": "center",
+                          "items": [
+                            { "type": "Text", "text": "✅", "fontSize": "20dp", "textAlign": "center" },
+                            { "type": "Text", "text": "Watered!", "fontSize": "11dp", "color": "#86EFAC", "fontWeight": "600", "textAlign": "center", "marginTop": "2dp" }
+                          ]
+                        },
+
+                        {
+                          "type": "Container",
+                          "when": "${!childData.interactionsUnlocked}",
+                          "width": "82dp",
+                          "height": "72dp",
+                          "backgroundColor": "#1f2937",
+                          "borderRadius": "12dp",
+                          "borderWidth": "1dp",
+                          "borderColor": "#374151",
+                          "alignItems": "center",
+                          "justifyContent": "center",
+                          "items": [
+                            { "type": "Text", "text": "🔒", "fontSize": "20dp", "textAlign": "center" },
+                            { "type": "Text", "text": "Play", "fontSize": "11dp", "color": "#4B5563", "textAlign": "center", "marginTop": "2dp" }
+                          ]
+                        },
+                        {
+                          "type": "TouchWrapper",
+                          "when": "${childData.interactionsUnlocked && !childData.interactions.played}",
+                          "onPress": { "type": "SendEvent", "arguments": ["playPet", "${childData.childId}"] },
+                          "item": {
+                            "type": "Container",
+                            "width": "82dp",
+                            "height": "72dp",
+                            "backgroundColor": "#7C3AED",
+                            "borderRadius": "12dp",
+                            "alignItems": "center",
+                            "justifyContent": "center",
+                            "items": [
+                              { "type": "Text", "text": "🎾", "fontSize": "20dp", "textAlign": "center" },
+                              { "type": "Text", "text": "Play", "fontSize": "12dp", "color": "#EDE9FE", "fontWeight": "600", "textAlign": "center", "marginTop": "2dp" }
+                            ]
+                          }
+                        },
+                        {
+                          "type": "Container",
+                          "when": "${childData.interactionsUnlocked && childData.interactions.played}",
+                          "width": "82dp",
+                          "height": "72dp",
+                          "backgroundColor": "#166534",
+                          "borderRadius": "12dp",
+                          "alignItems": "center",
+                          "justifyContent": "center",
+                          "items": [
+                            { "type": "Text", "text": "✅", "fontSize": "20dp", "textAlign": "center" },
+                            { "type": "Text", "text": "Played!", "fontSize": "11dp", "color": "#86EFAC", "fontWeight": "600", "textAlign": "center", "marginTop": "2dp" }
+                          ]
+                        }
+
+                      ]
+                    }
+
                   ]
                 }
 

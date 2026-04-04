@@ -1,7 +1,10 @@
 -- ============================================================
 -- Choreskill – Database Schema
 -- MySQL 5.7+ / MariaDB 10.3+
--- Run once on your Dreamhost MySQL database.
+-- Safe to re-run on an existing database:
+--   • CREATE TABLE IF NOT EXISTS skips existing tables (and their
+--     inline KEY declarations), so no duplicate-index errors occur.
+--   • All indexes are declared inline inside their CREATE TABLE block.
 -- ============================================================
 
 CREATE DATABASE IF NOT EXISTS choreskill
@@ -46,6 +49,7 @@ CREATE TABLE IF NOT EXISTS chores (
     sort_order TINYINT      NOT NULL DEFAULT 0,
     active     TINYINT(1)   NOT NULL DEFAULT 1,
     created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_chores_child (child_id, active),
     FOREIGN KEY (child_id) REFERENCES children(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -60,14 +64,22 @@ CREATE TABLE IF NOT EXISTS chore_completions (
     completed_date DATE         NOT NULL,
     completed_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_chore_day (chore_id, completed_date),
+    KEY idx_completions_child_date (child_id, completed_date),
     FOREIGN KEY (chore_id)  REFERENCES chores(id)   ON DELETE CASCADE,
     FOREIGN KEY (child_id)  REFERENCES children(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- ── Indexes ───────────────────────────────────────────────────────────────────
+-- ── Pet Interactions ──────────────────────────────────────────────────────────
+-- One row per interaction type (feed/water/play) per child per day.
+-- Only available when pet state is 'thriving'. UNIQUE prevents duplicate uses.
 
-CREATE INDEX idx_completions_child_date
-    ON chore_completions (child_id, completed_date);
-
-CREATE INDEX idx_chores_child
-    ON chores (child_id, active);
+CREATE TABLE IF NOT EXISTS pet_interactions (
+    id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    child_id         INT UNSIGNED NOT NULL,
+    interaction_type ENUM('feed','water','play') NOT NULL,
+    interaction_date DATE         NOT NULL,
+    interacted_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_child_interaction_day (child_id, interaction_type, interaction_date),
+    KEY idx_interactions_child_date (child_id, interaction_date),
+    FOREIGN KEY (child_id) REFERENCES children(id) ON DELETE CASCADE
+) ENGINE=InnoDB;

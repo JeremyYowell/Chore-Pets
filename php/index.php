@@ -495,6 +495,58 @@ function handleIntent(array $intent, array $household, array $attrs): never {
                 ->setSessionAttr('active_child_id', $child['id'])
                 ->keepSessionOpen()->send();
 
+        // ── Pet interactions: Feed / Water / Play ─────────────────────────────
+        // All three resolve the child from session context (active_child_id) or
+        // from an optional childName slot, then delegate to handlePetInteraction().
+
+        case 'FeedPetIntent':
+            $childName = $get('childName');
+            $child = $childName
+                ? ChoreManager::findChildByName($household['id'], $childName)
+                : (isset($attrs['active_child_id'])
+                    ? ChoreManager::getChild((int)$attrs['active_child_id'])
+                    : null);
+            if (!$child) {
+                (new AlexaResponse())
+                    ->preserveSession($sessionAttrs)
+                    ->speak("I'm not sure whose pet to feed. Say a child's name first.")
+                    ->reprompt("Say a child's name.")
+                    ->keepSessionOpen()->send();
+            }
+            handlePetInteraction('feed', $child);
+
+        case 'WaterPetIntent':
+            $childName = $get('childName');
+            $child = $childName
+                ? ChoreManager::findChildByName($household['id'], $childName)
+                : (isset($attrs['active_child_id'])
+                    ? ChoreManager::getChild((int)$attrs['active_child_id'])
+                    : null);
+            if (!$child) {
+                (new AlexaResponse())
+                    ->preserveSession($sessionAttrs)
+                    ->speak("I'm not sure whose pet to water. Say a child's name first.")
+                    ->reprompt("Say a child's name.")
+                    ->keepSessionOpen()->send();
+            }
+            handlePetInteraction('water', $child);
+
+        case 'PlayWithPetIntent':
+            $childName = $get('childName');
+            $child = $childName
+                ? ChoreManager::findChildByName($household['id'], $childName)
+                : (isset($attrs['active_child_id'])
+                    ? ChoreManager::getChild((int)$attrs['active_child_id'])
+                    : null);
+            if (!$child) {
+                (new AlexaResponse())
+                    ->preserveSession($sessionAttrs)
+                    ->speak("I'm not sure whose pet to play with. Say a child's name first.")
+                    ->reprompt("Say a child's name.")
+                    ->keepSessionOpen()->send();
+            }
+            handlePetInteraction('play', $child);
+
         case 'ListChoresIntent':
             $childName = $get('childName');
             $child = $childName
@@ -583,6 +635,47 @@ function handleIntent(array $intent, array $household, array $attrs): never {
 }
 
 /**
+ * Handle a Feed / Water / Play pet interaction.
+ *
+ * Called from both voice intents (FeedPetIntent etc.) and APL touch events
+ * (feedPet / waterPet / playPet). The child row must already be loaded.
+ *
+ * If the pet is not Thriving, or the interaction was already used today,
+ * explains why and refreshes the child view unchanged.
+ */
+function handlePetInteraction(string $type, array $child): never {
+    global $aplSupported, $sessionAttrs;
+
+    $labels  = ['feed' => 'fed', 'water' => 'watered', 'play' => 'played with'];
+    $success = PetEngine::recordInteraction($child['id'], $type);
+
+    if ($success) {
+        $petName = $child['pet_name'] ?: ($child['name'] . "'s pet");
+        $speech  = "You {$labels[$type]} {$petName}! They love that! 🐾";
+    } else {
+        $state = PetEngine::getState($child['id']);
+        if ($state !== 'thriving') {
+            $speech = "{$child['name']}'s pet needs to reach Thriving before you can unlock rewards. "
+                    . "Keep completing chores to get there!";
+        } else {
+            $speech = "You've already done that today. Come back tomorrow for more!";
+        }
+    }
+
+    $chores = ChoreManager::getChoresWithStatus($child['id']);
+    $data   = AlexaResponse::buildChildDatasource($child, $chores);
+
+    $r = (new AlexaResponse())
+        ->speak($speech)
+        ->setSessionAttr('active_child_id', $child['id'])
+        ->keepSessionOpen();
+    if ($aplSupported) {
+        $r->renderApl('childView', AlexaResponse::loadApl('child-view'), $data);
+    }
+    $r->send();
+}
+
+/**
  * Show the pet selection screen (or prompt via voice if no screen).
  * Called from DoneAddingChoresIntent and from AMAZON.NoIntent when step === 'adding_chores'.
  * The child and their chores must already be committed to the DB before calling this.
@@ -647,6 +740,18 @@ function handleAplEvent(array $args, array $household, array $attrs): never {
 
         case 'goHome':
             showHome(ChoreManager::getChildren($household['id']));
+
+        case 'feedPet':
+        case 'waterPet':
+        case 'playPet':
+            // Tapped a Feed/Water/Play button on the child view
+            $typeMap = ['feedPet' => 'feed', 'waterPet' => 'water', 'playPet' => 'play'];
+            $child   = ChoreManager::getChild($childId);
+            if (!$child) showHome(ChoreManager::getChildren($household['id']));
+            // Temporarily inject active_child_id so handlePetInteraction can
+            // rebuild the datasource with the correct session context.
+            $sessionAttrs['active_child_id'] = $childId;
+            handlePetInteraction($typeMap[$action], $child);
 
         case 'selectPet':
             // This fires when the user TAPS a pet card during onboarding

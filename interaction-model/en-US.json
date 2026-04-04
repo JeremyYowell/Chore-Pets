@@ -225,6 +225,62 @@
         },
 
         {
+          "name": "FeedPetIntent",
+          "slots": [
+            {
+              "name": "childName",
+              "type": "AMAZON.FirstName"
+            }
+          ],
+          "samples": [
+            "feed my pet",
+            "feed the pet",
+            "feed the pet for {childName}",
+            "give my pet food",
+            "give the pet for {childName} food",
+            "my pet is hungry",
+            "the pet for {childName} is hungry"
+          ]
+        },
+
+        {
+          "name": "WaterPetIntent",
+          "slots": [
+            {
+              "name": "childName",
+              "type": "AMAZON.FirstName"
+            }
+          ],
+          "samples": [
+            "water my pet",
+            "give my pet water",
+            "water the pet for {childName}",
+            "give the pet for {childName} water",
+            "give my pet a drink",
+            "my pet is thirsty",
+            "the pet for {childName} is thirsty"
+          ]
+        },
+
+        {
+          "name": "PlayWithPetIntent",
+          "slots": [
+            {
+              "name": "childName",
+              "type": "AMAZON.FirstName"
+            }
+          ],
+          "samples": [
+            "play with my pet",
+            "play with the pet",
+            "play with the pet for {childName}",
+            "let's play with the pet",
+            "I want to play with my pet",
+            "I want to play with the pet for {childName}"
+          ]
+        },
+
+        {
           "name": "ListChoresIntent",
           "slots": [
             {

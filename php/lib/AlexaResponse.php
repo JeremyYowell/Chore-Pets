@@ -25,7 +25,9 @@ class AlexaResponse {
 
     public function speak(string $text): self {
         // Wrap plain text in SSML
-        $ssml = strpos($text, '<speak>') === 0 ? $text : "<speak>{$text}</speak>";
+        $ssml = strpos($text, '<speak>') === 0
+            ? $text
+            : '<speak>' . self::escapeForSsml($text) . '</speak>';
         $this->response['response']['outputSpeech'] = [
             'type' => 'SSML',
             'ssml' => $ssml,
@@ -34,7 +36,9 @@ class AlexaResponse {
     }
 
     public function reprompt(string $text): self {
-        $ssml = strpos($text, '<speak>') === 0 ? $text : "<speak>{$text}</speak>";
+        $ssml = strpos($text, '<speak>') === 0
+            ? $text
+            : '<speak>' . self::escapeForSsml($text) . '</speak>';
         $this->response['response']['reprompt'] = [
             'outputSpeech' => ['type' => 'SSML', 'ssml' => $ssml],
         ];
@@ -94,6 +98,10 @@ class AlexaResponse {
 
     // ── Helpers ────────────────────────────────────────────────────────────────
 
+    private static function escapeForSsml(string $text): string {
+        return htmlspecialchars($text, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+    }
+
     /** Load APL JSON from the apl/ directory adjacent to this file. */
     public static function loadApl(string $name): array {
         $path = __DIR__ . "/../apl/{$name}.json";
@@ -133,32 +141,46 @@ class AlexaResponse {
      * Build the datasource for the child view (chore list + pet).
      */
     public static function buildChildDatasource(array $child, array $chores): array {
-        $state     = PetEngine::getState($child['id']);
-        $progress  = PetEngine::todayProgress($child['id']);
-        $naming    = PetEngine::checkNamingEligibility($child['id']);
+        $state        = PetEngine::getState($child['id']);
+        $progress     = PetEngine::todayProgress($child['id']);
+        $naming       = PetEngine::checkNamingEligibility($child['id']);
+        $unlocked     = PetEngine::interactionsUnlocked($child['id']);
+        $interactions = PetEngine::getTodayInteractions($child['id']);
+        $allDone      = $unlocked && !in_array(false, $interactions, true);
 
         $choreList = [];
         foreach ($chores as $chore) {
             $choreList[] = [
-                'id'        => $chore['id'],
-                'name'      => $chore['name'],
-                'done'      => (bool)$chore['completed_today'],
+                'id'   => $chore['id'],
+                'name' => $chore['name'],
+                'done' => (bool)$chore['completed_today'],
             ];
         }
 
         return [
             'childData' => [
-                'childId'        => $child['id'],
-                'name'           => $child['name'],
-                'petType'        => $child['pet_type'],
-                'petName'        => $child['pet_name'] ?? '',
-                'petImage'       => PetEngine::getImageUrl($child['pet_type'], $state),
-                'petState'       => $state,
-                'stateLabel'     => PetEngine::getStateLabel($state),
-                'namingUnlocked' => $naming && empty($child['pet_name']),
-                'doneCount'      => $progress['done'],
-                'totalCount'     => $progress['total'],
-                'chores'         => $choreList,
+                'childId'             => $child['id'],
+                'name'                => $child['name'],
+                'petType'             => $child['pet_type'],
+                'petName'             => $child['pet_name'] ?? '',
+                'petImage'            => PetEngine::getImageUrl($child['pet_type'], $state),
+                'petState'            => $state,
+                'stateLabel'          => PetEngine::getStateLabel($state),
+                'namingUnlocked'      => $naming && empty($child['pet_name']),
+                'doneCount'           => $progress['done'],
+                'totalCount'          => $progress['total'],
+                'chores'              => $choreList,
+                // ── Pet interactions ─────────────────────────────────────────
+                // interactionsUnlocked: pet is 'thriving' — shows buttons in APL
+                // interactions.fed/watered/played: already used today — shows done state
+                // allInteractionsDone: all three used — shows completion banner
+                'interactionsUnlocked' => $unlocked,
+                'interactions'         => [
+                    'fed'    => $interactions['feed'],
+                    'watered'=> $interactions['water'],
+                    'played' => $interactions['play'],
+                ],
+                'allInteractionsDone'  => $allDone,
             ],
         ];
     }
@@ -209,7 +231,21 @@ class AlexaResponse {
     public function send(): never {
         ob_end_clean(); // discard any stray output (PHP notices, warnings, etc.)
         header('Content-Type: application/json');
-        echo json_encode($this->response);
+        $json = json_encode($this->response);
+        if ($json === false) {
+            error_log('[ChorePets] json_encode failed: ' . json_last_error_msg());
+            $json = json_encode([
+                'version' => '1.0',
+                'response' => [
+                    'outputSpeech' => [
+                        'type' => 'PlainText',
+                        'text' => 'Sorry, something went wrong. Please try again.',
+                    ],
+                    'shouldEndSession' => true,
+                ],
+            ]);
+        }
+        echo $json;
         exit;
     }
 

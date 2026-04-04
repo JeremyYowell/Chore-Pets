@@ -1,4 +1,9 @@
 <?php
+/**
+ * Copy this file to `config.local.php` and replace every placeholder value.
+ *
+ * Do not commit the real `config.local.php` file.
+ */
 
 return [
     'ALEXA_SKILL_ID' => 'amzn1.ask.skill.XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX',

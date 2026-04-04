@@ -25,6 +25,11 @@ define('DB_PASS', $localConfig['DB_PASS'] ?? 'your_db_password');
 define('ASSETS_URL', $localConfig['ASSETS_URL'] ?? 'https://yourdomain.com/chores/assets');
 
 define('PET_TYPES', ['cat', 'dog', 'hamster', 'panda']);
+
+// ── Pet Interactions ───────────────────────────────────────────────────────────
+// The three daily interactions available when the pet is in 'thriving' state.
+define('PET_INTERACTION_TYPES', ['feed', 'water', 'play']);
+
 define('PET_STATE_THRESHOLDS', [
     'thriving' => 90,
     'happy' => 70,
@@ -51,7 +56,41 @@ define(
     "Do you want to add another child? Say yes to add one, or no if you're all set."
 );
 
-return;
+$missingConfigIssues = [];
+
+if (!is_file($localConfigPath)) {
+    $missingConfigIssues[] = 'config.local.php is missing';
+}
+
+if (ALEXA_SKILL_ID === 'amzn1.ask.skill.REPLACE-ME') {
+    $missingConfigIssues[] = 'ALEXA_SKILL_ID is not configured';
+}
+
+if (DB_HOST === 'mysql.yourdomain.com') {
+    $missingConfigIssues[] = 'DB_HOST is still using the placeholder value';
+}
+
+if (DB_NAME === 'chore_champion') {
+    $missingConfigIssues[] = 'DB_NAME is still using the placeholder value';
+}
+
+if (DB_USER === 'your_db_user') {
+    $missingConfigIssues[] = 'DB_USER is still using the placeholder value';
+}
+
+if (DB_PASS === 'your_db_password') {
+    $missingConfigIssues[] = 'DB_PASS is still using the placeholder value';
+}
+
+if (ASSETS_URL === 'https://yourdomain.com/chores/assets') {
+    $missingConfigIssues[] = 'ASSETS_URL is still using the placeholder value';
+}
+
+if ($missingConfigIssues) {
+    throw new RuntimeException('Missing runtime configuration: ' . implode('; ', $missingConfigIssues));
+}
+
+__halt_compiler();
 /*
 /**
  * Chore Pets – Configuration

@@ -14,6 +14,7 @@
  *   • Requires NAMING_STREAK_DAYS (default 7) consecutive days at 100%.
  */
 class PetEngine {
+    private static ?bool $petInteractionsTableAvailable = null;
 
     /**
      * Returns one of: 'sick' | 'sad' | 'neutral' | 'happy' | 'thriving'
@@ -128,6 +129,106 @@ class PetEngine {
             [$childId]
         );
         return true;
+    }
+
+    // ── Pet Interactions ───────────────────────────────────────────────────────
+
+    /**
+     * Returns true if the pet is currently in 'thriving' state —
+     * the unlock condition for Feed/Water/Play interactions.
+     */
+    public static function interactionsUnlocked(int $childId): bool {
+        return self::petInteractionsAvailable() && self::getState($childId) === 'thriving';
+    }
+
+    /**
+     * Returns which interactions the child has used today.
+     * Result: ['feed' => bool, 'water' => bool, 'play' => bool]
+     */
+    public static function getTodayInteractions(int $childId): array {
+        if (!self::petInteractionsAvailable()) {
+            return self::emptyInteractions();
+        }
+
+        $today = date('Y-m-d');
+        try {
+            $rows = Database::query(
+                "SELECT interaction_type FROM pet_interactions
+                  WHERE child_id = ? AND interaction_date = ?",
+                [$childId, $today]
+            );
+        } catch (Throwable $e) {
+            self::$petInteractionsTableAvailable = false;
+            error_log('[ChorePets] pet_interactions lookup failed: ' . $e->getMessage());
+            return self::emptyInteractions();
+        }
+        $used   = array_column($rows, 'interaction_type');
+        $result = [];
+        foreach (PET_INTERACTION_TYPES as $type) {
+            $result[$type] = in_array($type, $used, true);
+        }
+        return $result;
+    }
+
+    /**
+     * Records a pet interaction for today.
+     * Returns true on success, false if pet is not thriving or already used today.
+     */
+    public static function recordInteraction(int $childId, string $type): bool {
+        if (!in_array($type, PET_INTERACTION_TYPES, true)) return false;
+        if (!self::petInteractionsAvailable())             return false;
+        if (!self::interactionsUnlocked($childId))          return false;
+
+        $today    = date('Y-m-d');
+        try {
+            $existing = Database::queryOne(
+                "SELECT id FROM pet_interactions
+                  WHERE child_id = ? AND interaction_type = ? AND interaction_date = ?",
+                [$childId, $type, $today]
+            );
+        } catch (Throwable $e) {
+            self::$petInteractionsTableAvailable = false;
+            error_log('[ChorePets] pet_interactions read failed: ' . $e->getMessage());
+            return false;
+        }
+        if ($existing) return false; // already used this interaction today
+
+        try {
+            Database::execute(
+                "INSERT INTO pet_interactions (child_id, interaction_type, interaction_date)
+                 VALUES (?, ?, ?)",
+                [$childId, $type, $today]
+            );
+        } catch (Throwable $e) {
+            self::$petInteractionsTableAvailable = false;
+            error_log('[ChorePets] pet_interactions insert failed: ' . $e->getMessage());
+            return false;
+        }
+        return true;
+    }
+
+    private static function petInteractionsAvailable(): bool {
+        if (self::$petInteractionsTableAvailable !== null) {
+            return self::$petInteractionsTableAvailable;
+        }
+
+        try {
+            Database::query("SELECT 1 FROM pet_interactions LIMIT 1");
+            self::$petInteractionsTableAvailable = true;
+        } catch (Throwable $e) {
+            self::$petInteractionsTableAvailable = false;
+            error_log('[ChorePets] pet_interactions table unavailable: ' . $e->getMessage());
+        }
+
+        return self::$petInteractionsTableAvailable;
+    }
+
+    private static function emptyInteractions(): array {
+        return [
+            'feed' => false,
+            'water' => false,
+            'play' => false,
+        ];
     }
 
     /**
