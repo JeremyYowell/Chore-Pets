@@ -47,6 +47,7 @@ require_once __DIR__ . '/lib/Database.php';
 require_once __DIR__ . '/lib/PetEngine.php';
 require_once __DIR__ . '/lib/ChoreManager.php';
 require_once __DIR__ . '/lib/AlexaResponse.php';
+require_once __DIR__ . '/lib/AlexaSignatureVerifier.php';
 
 // ── Parse incoming request ────────────────────────────────────────────────────
 
@@ -59,12 +60,17 @@ if (!$req) {
     exit('Bad Request');
 }
 
-// Verify skill ID matches (basic guard)
-$skillId = $req['context']['System']['application']['applicationId'] ?? '';
-if (VERIFY_SIGNATURES && $skillId !== ALEXA_SKILL_ID) {
-    ob_end_clean();
-    http_response_code(403);
-    exit('Forbidden');
+// ── Alexa request verification ────────────────────────────────────────────────
+// When VERIFY_SIGNATURES is true (the production default), every request is
+// verified against Amazon's certificate chain, signature, and timestamp.
+// Set VERIFY_SIGNATURES = false in config.local.php ONLY during local testing.
+if (VERIFY_SIGNATURES) {
+    AlexaSignatureVerifier::verifyOrFail(
+        $_SERVER['HTTP_SIGNATURECERTCHAINURL'] ?? '',
+        $_SERVER['HTTP_SIGNATURE']            ?? '',
+        $body,
+        $req['request']['timestamp']          ?? ''
+    );
 }
 
 // ── APL support detection ─────────────────────────────────────────────────────
@@ -75,21 +81,20 @@ $aplSupported = isset(
     $req['context']['System']['device']['supportedInterfaces']['Alexa.Presentation.APL']
 );
 
-// DEBUG: log APL support status and interfaces to Dreamhost error log.
-// Check with: tail -f ~/logs/chores.space-monkey.org/http/error.log
-// Remove this block once APL is confirmed working.
-error_log('[ChorePets] requestType=' . ($req['request']['type'] ?? 'unknown') .
-          ' aplSupported=' . ($aplSupported ? 'YES' : 'NO') .
-          ' interfaces=' . json_encode(
-              array_keys($req['context']['System']['device']['supportedInterfaces'] ?? [])
-          ));
-
 // ── Extract common context ────────────────────────────────────────────────────
 
 $alexaUserId  = $req['context']['System']['user']['userId'] ?? '';
 $requestType  = $req['request']['type'] ?? '';
 $session      = $req['session'] ?? [];
 $sessionAttrs = $session['attributes'] ?? [];
+
+// Guard: Alexa userId must always be present
+if ($alexaUserId === '') {
+    error_log('[ChorePets] Request missing userId — possible malformed request');
+    ob_end_clean();
+    http_response_code(400);
+    exit('Bad Request');
+}
 
 // Ensure this household exists
 $household = ChoreManager::getOrCreateHousehold($alexaUserId);
@@ -130,7 +135,10 @@ function handleLaunch(array $household, array $attrs): never {
 
     // No children yet → start onboarding
     if (empty($children)) {
-        showOnboarding($household, $attrs);
+        showOnboarding($household, $attrs); // exits via ->send()
+        // Unreachable, but explicit return makes intent clear to static analysers
+        // and guards against a future refactor that changes showOnboarding's signature.
+        exit;
     }
 
     // Children exist but setup was never marked done (e.g. crash mid-onboarding)
@@ -157,6 +165,44 @@ function handleIntent(array $intent, array $household, array $attrs): never {
 
         case 'ProvideChildNameIntent':
             $childName = $get('childName');
+
+            // Context override: if we're adding chores and Alexa matched a chore phrase
+            // as a child name (e.g. "Cello Practice" → childName="cello"), treat it as a chore.
+            if ($step === 'adding_chores' && $childName) {
+                $choreChildId   = (int)($attrs['onboarding_child_id'] ?? 0);
+                $choreChildName = $attrs['onboarding_child_name'] ?? 'your child';
+                if ($choreChildId) ChoreManager::addChore($choreChildId, $childName);
+
+                if (!empty($attrs['return_to_parent_menu']) && $household['setup_done']) {
+                    $children = ChoreManager::getChildren($household['id']);
+                    $r = (new AlexaResponse())
+                        ->speak("Got it! Added " . ucfirst($childName) . " for " . ucfirst($choreChildName) . ".")
+                        ->keepSessionOpen();
+                    if ($aplSupported) {
+                        $r->renderApl('parentMenu', AlexaResponse::loadApl('parent-menu'),
+                            AlexaResponse::buildParentMenuDatasource($children));
+                    }
+                    $r->send();
+                }
+
+                $savedChores = $choreChildId ? array_column(ChoreManager::getChores($choreChildId), 'name') : [];
+                $choreCount  = count($savedChores);
+                $speech = "Got it! Added " . ucfirst($childName) . ". " .
+                          ($choreCount === 1 ? "That's 1 chore so far." : "That's {$choreCount} chores so far.") .
+                          " Say another chore, or say done when finished.";
+                $r = (new AlexaResponse())
+                    ->preserveSession($sessionAttrs)
+                    ->speak($speech)
+                    ->reprompt("Say another chore, or say done.")
+                    ->keepSessionOpen();
+                if ($aplSupported) {
+                    $completedChildren = buildCompletedChildrenList($household['id'], $choreChildId);
+                    $r->renderApl('onboarding', AlexaResponse::loadApl('onboarding'),
+                        AlexaResponse::buildOnboardingDatasource('adding_chores', $choreChildName, $savedChores, $completedChildren));
+                }
+                $r->send();
+            }
+
             if (!$childName) {
                 (new AlexaResponse())
                     ->preserveSession($sessionAttrs)
@@ -167,6 +213,14 @@ function handleIntent(array $intent, array $household, array $attrs): never {
 
             // DB-first: create or find the child immediately (prevents duplicates)
             $existingChild = ChoreManager::findChildByName($household['id'], $childName);
+
+            // If setup is already done and the child exists, go straight to their chore view —
+            // do NOT re-enter the setup flow. Fixes issue where saying a child's name on the
+            // home screen by voice sent the user back through onboarding.
+            if ($existingChild && $household['setup_done']) {
+                showChildView($existingChild);
+            }
+
             $childId = $existingChild
                 ? $existingChild['id']
                 : ChoreManager::addChild($household['id'], $childName);
@@ -192,7 +246,7 @@ function handleIntent(array $intent, array $household, array $attrs): never {
         // ── Onboarding: write each chore directly to DB ───────────────────────
 
         case 'AddChoreIntent':
-            $choreName = $get('choreName');
+            $choreName = $get('newChoreName') ?: $get('choreName'); // newChoreName = AMAZON.SearchQuery slot
             if (!$choreName) {
                 (new AlexaResponse())
                     ->preserveSession($sessionAttrs)
@@ -208,7 +262,20 @@ function handleIntent(array $intent, array $household, array $attrs): never {
                 ChoreManager::addChore($childId, $choreName);
             }
 
-            // Read back all chores from DB so the screen shows the full live list
+            // If coming from parent menu "+ Chore" button, return there immediately
+            if (!empty($attrs['return_to_parent_menu']) && $household['setup_done']) {
+                $children = ChoreManager::getChildren($household['id']);
+                $r = (new AlexaResponse())
+                    ->speak("Got it! Added " . ucfirst($choreName) . " for " . ucfirst($childName) . ".")
+                    ->keepSessionOpen();
+                if ($aplSupported) {
+                    $r->renderApl('parentMenu', AlexaResponse::loadApl('parent-menu'),
+                        AlexaResponse::buildParentMenuDatasource($children));
+                }
+                $r->send();
+            }
+
+            // Normal onboarding flow: show updated chore list and prompt for more
             $savedChores = $childId ? array_column(ChoreManager::getChores($childId), 'name') : [];
             $choreCount  = count($savedChores);
             $speech      = "Got it! Added " . ucfirst($choreName) . ". " .
@@ -250,6 +317,19 @@ function handleIntent(array $intent, array $household, array $attrs): never {
                     ->keepSessionOpen()->send();
             }
 
+            // If we came here from the parent menu (post-setup chore add), return there
+            if (!empty($attrs['return_to_parent_menu']) && $household['setup_done']) {
+                $children = ChoreManager::getChildren($household['id']);
+                $r = (new AlexaResponse())
+                    ->speak("Got it! Chores saved for " . ucfirst($childName) . ".")
+                    ->keepSessionOpen();
+                if ($aplSupported) {
+                    $r->renderApl('parentMenu', AlexaResponse::loadApl('parent-menu'),
+                        AlexaResponse::buildParentMenuDatasource($children));
+                }
+                $r->send();
+            }
+
             showPetSelect($childId, $childName, $aplSupported, $sessionAttrs);
 
         // ── AMAZON.NoIntent: context-dependent ───────────────────────────────
@@ -273,12 +353,41 @@ function handleIntent(array $intent, array $household, array $attrs): never {
                         ->keepSessionOpen()->send();
                 }
 
+                // If we came here from the parent menu (post-setup chore add), return there
+                if (!empty($attrs['return_to_parent_menu']) && $household['setup_done']) {
+                    $children = ChoreManager::getChildren($household['id']);
+                    $r = (new AlexaResponse())
+                        ->speak("Got it! Chores saved for " . ucfirst($childName) . ".")
+                        ->keepSessionOpen();
+                    if ($aplSupported) {
+                        $r->renderApl('parentMenu', AlexaResponse::loadApl('parent-menu'),
+                            AlexaResponse::buildParentMenuDatasource($children));
+                    }
+                    $r->send();
+                }
+
                 showPetSelect($childId, $childName, $aplSupported, $sessionAttrs);
 
             } elseif ($step === 'add_another_child') {
-                // Done! Mark setup complete and show home with options
+                // Done! Mark setup complete.
                 ChoreManager::markSetupDone($household['id']);
                 $children = ChoreManager::getChildren($household['id']);
+
+                // If we came here from the parent menu (e.g. "+ Add Child" button),
+                // return to the parent menu so the new child is immediately visible.
+                if (!empty($attrs['from_parent_menu'])) {
+                    $count = count($children);
+                    $r = (new AlexaResponse())
+                        ->speak("Done! " . ($count === 1 ? "1 child" : "{$count} children") . " set up. Here's your parent settings.")
+                        ->reprompt("Tap Remove to delete a child or chore, or tap '+ Add Child' to add more.")
+                        ->keepSessionOpen();
+                    if ($aplSupported) {
+                        $r->renderApl('parentMenu', AlexaResponse::loadApl('parent-menu'),
+                            AlexaResponse::buildParentMenuDatasource($children));
+                    }
+                    $r->send();
+                }
+
                 $count    = count($children);
                 $names    = implode(' and ', array_column($children, 'name'));
                 $speech   = "You're all set! " .
@@ -382,6 +491,44 @@ function handleIntent(array $intent, array $household, array $attrs): never {
 
         case 'SelectChildIntent':
             $childName = $get('childName');
+
+            // Context override: if adding chores and Alexa matched a child name intent
+            // (e.g. "Swim Team Practice" → childName="swim"), treat the value as a chore.
+            if ($step === 'adding_chores' && $childName) {
+                $choreChildId   = (int)($attrs['onboarding_child_id'] ?? 0);
+                $choreChildName = $attrs['onboarding_child_name'] ?? 'your child';
+                if ($choreChildId) ChoreManager::addChore($choreChildId, $childName);
+
+                if (!empty($attrs['return_to_parent_menu']) && $household['setup_done']) {
+                    $children = ChoreManager::getChildren($household['id']);
+                    $r = (new AlexaResponse())
+                        ->speak("Got it! Added " . ucfirst($childName) . " for " . ucfirst($choreChildName) . ".")
+                        ->keepSessionOpen();
+                    if ($aplSupported) {
+                        $r->renderApl('parentMenu', AlexaResponse::loadApl('parent-menu'),
+                            AlexaResponse::buildParentMenuDatasource($children));
+                    }
+                    $r->send();
+                }
+
+                $savedChores = $choreChildId ? array_column(ChoreManager::getChores($choreChildId), 'name') : [];
+                $choreCount  = count($savedChores);
+                $speech = "Got it! Added " . ucfirst($childName) . ". " .
+                          ($choreCount === 1 ? "That's 1 chore so far." : "That's {$choreCount} chores so far.") .
+                          " Say another chore, or say done when finished.";
+                $r = (new AlexaResponse())
+                    ->preserveSession($sessionAttrs)
+                    ->speak($speech)
+                    ->reprompt("Say another chore, or say done.")
+                    ->keepSessionOpen();
+                if ($aplSupported) {
+                    $completedChildren = buildCompletedChildrenList($household['id'], $choreChildId);
+                    $r->renderApl('onboarding', AlexaResponse::loadApl('onboarding'),
+                        AlexaResponse::buildOnboardingDatasource('adding_chores', $choreChildName, $savedChores, $completedChildren));
+                }
+                $r->send();
+            }
+
             $child = ChoreManager::findChildByName($household['id'], $childName);
             if (!$child) {
                 (new AlexaResponse())
@@ -576,6 +723,37 @@ function handleIntent(array $intent, array $household, array $attrs): never {
                 ->setSessionAttr('active_child_id', $child['id'])
                 ->keepSessionOpen()->send();
 
+        // ── Parent configuration ──────────────────────────────────────────────
+
+        case 'OpenParentMenuIntent':
+            showParentMenu(ChoreManager::getChildren($household['id']));
+
+        case 'RemoveChildIntent':
+            $childName = $get('childName');
+            $child = ChoreManager::findChildByName($household['id'], $childName);
+            if (!$child) {
+                (new AlexaResponse())
+                    ->preserveSession($sessionAttrs)
+                    ->speak("I couldn't find a child named {$childName}.")
+                    ->reprompt("Which child would you like to remove?")
+                    ->keepSessionOpen()->send();
+            }
+            ChoreManager::removeChild($child['id'], $household['id']);
+            $remaining = ChoreManager::getChildren($household['id']);
+            $speech = "{$child['name']} has been removed.";
+            if (empty($remaining)) {
+                $speech .= " You have no children set up. Say 'add a child' to add one.";
+            } else {
+                $names = implode(' and ', array_column($remaining, 'name'));
+                $speech .= " Remaining: {$names}.";
+            }
+            $r = (new AlexaResponse())->speak($speech)->keepSessionOpen();
+            if ($aplSupported) {
+                $r->renderApl('parentMenu', AlexaResponse::loadApl('parent-menu'),
+                    AlexaResponse::buildParentMenuDatasource($remaining));
+            }
+            $r->send();
+
         // ── System intents ────────────────────────────────────────────────────
 
         case 'AddChildIntent':
@@ -597,7 +775,7 @@ function handleIntent(array $intent, array $household, array $attrs): never {
 
         case 'AMAZON.CancelIntent':
         case 'AMAZON.StopIntent':
-            (new AlexaResponse())->speak("Goodbye! Keep up the great work!")->send();
+            (new AlexaResponse())->speak(PROMPT_GOODBYE)->send();
 
         default:
             // During onboarding, give step-specific re-prompts instead of a generic error
@@ -653,10 +831,10 @@ function handlePetInteraction(string $type, array $child): never {
         $petName = $child['pet_name'] ?: ($child['name'] . "'s pet");
         $speech  = "You {$labels[$type]} {$petName}! They love that! 🐾";
     } else {
-        $state = PetEngine::getState($child['id']);
-        if ($state !== 'thriving') {
-            $speech = "{$child['name']}'s pet needs to reach Thriving before you can unlock rewards. "
-                    . "Keep completing chores to get there!";
+        $progress = PetEngine::todayProgress($child['id']);
+        if ($progress['done'] < $progress['total']) {
+            $speech = "{$child['name']} needs to finish all their chores today to unlock pet rewards. "
+                    . "{$progress['done']} of {$progress['total']} done so far!";
         } else {
             $speech = "You've already done that today. Come back tomorrow for more!";
         }
@@ -753,6 +931,68 @@ function handleAplEvent(array $args, array $household, array $attrs): never {
             $sessionAttrs['active_child_id'] = $childId;
             handlePetInteraction($typeMap[$action], $child);
 
+        case 'openParentMenu':
+            showParentMenu(ChoreManager::getChildren($household['id']));
+
+        case 'deleteChild':
+            ChoreManager::removeChild($childId, $household['id']);
+            $remaining = ChoreManager::getChildren($household['id']);
+            if (empty($remaining)) {
+                // All children removed — go to onboarding
+                ChoreManager::markSetupDone($household['id']); // reset would be cleaner, but keep simple
+                (new AlexaResponse())
+                    ->speak("Child removed. You have no children set up. Say 'add a child' to add one.")
+                    ->reprompt("Say 'add a child' to get started.")
+                    ->keepSessionOpen()->send();
+            }
+            $r = (new AlexaResponse())
+                ->speak("Child removed.")
+                ->keepSessionOpen();
+            if ($aplSupported) {
+                $r->renderApl('parentMenu', AlexaResponse::loadApl('parent-menu'),
+                    AlexaResponse::buildParentMenuDatasource($remaining));
+            }
+            $r->send();
+
+        case 'deleteChore':
+            $choreId = $childId; // args[1] is choreId for this event
+            ChoreManager::removeChore($choreId);
+            $children = ChoreManager::getChildren($household['id']);
+            $r = (new AlexaResponse())
+                ->speak("Chore removed.")
+                ->keepSessionOpen();
+            if ($aplSupported) {
+                $r->renderApl('parentMenu', AlexaResponse::loadApl('parent-menu'),
+                    AlexaResponse::buildParentMenuDatasource($children));
+            }
+            $r->send();
+
+        case 'addChildFromMenu':
+            // Trigger the voice flow to add a new child.
+            // Set from_parent_menu so that after onboarding completes we return
+            // to the parent menu (not the home screen).
+            (new AlexaResponse())
+                ->speak("Sure! What's the name of the child you'd like to add?")
+                ->reprompt("What's your child's name?")
+                ->setSessionAttr('onboarding_step',       'child_name')
+                ->setSessionAttr('onboarding_child_id',   0)
+                ->setSessionAttr('onboarding_child_name', '')
+                ->setSessionAttr('from_parent_menu',      true)
+                ->keepSessionOpen()->send();
+
+        case 'addChoreToChild':
+            // childId is the child to add a chore to — set session context and prompt
+            $child = ChoreManager::getChild($childId);
+            $childName = $child ? $child['name'] : 'that child';
+            (new AlexaResponse())
+                ->speak("What chore would you like to add for {$childName}?")
+                ->reprompt("Say a chore name, or say cancel.")
+                ->setSessionAttr('onboarding_step',       'adding_chores')
+                ->setSessionAttr('onboarding_child_id',   $childId)
+                ->setSessionAttr('onboarding_child_name', $childName)
+                ->setSessionAttr('return_to_parent_menu', true)
+                ->keepSessionOpen()->send();
+
         case 'selectPet':
             // This fires when the user TAPS a pet card during onboarding
             $petType = $args[2] ?? '';
@@ -804,6 +1044,19 @@ function buildCompletedChildrenList(int $householdId, int $currentChildId): arra
         }
     }
     return $result;
+}
+
+function showParentMenu(array $children): never {
+    global $aplSupported;
+    $r = (new AlexaResponse())
+        ->speak("Parent settings. You can add or remove children and chores.")
+        ->reprompt("Say 'add a child' to add one, or tap Remove to delete.")
+        ->keepSessionOpen();
+    if ($aplSupported) {
+        $r->renderApl('parentMenu', AlexaResponse::loadApl('parent-menu'),
+            AlexaResponse::buildParentMenuDatasource($children));
+    }
+    $r->send();
 }
 
 function showHome(array $children): never {

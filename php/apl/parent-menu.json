@@ -1,0 +1,274 @@
+{
+  "type": "APL",
+  "version": "1.6",
+  "theme": "dark",
+  "import": [
+    { "name": "alexa-layouts", "version": "1.5.0" },
+    { "name": "alexa-styles",  "version": "1.5.0" }
+  ],
+  "mainTemplate": {
+    "parameters": ["parentData"],
+    "item": {
+      "type": "Container",
+      "width": "100vw",
+      "height": "100vh",
+      "backgroundColor": "#111827",
+      "direction": "column",
+      "items": [
+
+        {
+          "type": "Container",
+          "backgroundColor": "#1f2937",
+          "paddingLeft": "20dp",
+          "paddingRight": "20dp",
+          "paddingTop": "12dp",
+          "paddingBottom": "12dp",
+          "direction": "row",
+          "alignItems": "center",
+          "items": [
+            {
+              "type": "TouchWrapper",
+              "onPress": {
+                "type": "SendEvent",
+                "arguments": ["goHome"]
+              },
+              "item": {
+                "type": "Container",
+                "backgroundColor": "#374151",
+                "borderRadius": "8dp",
+                "paddingLeft": "16dp",
+                "paddingRight": "16dp",
+                "paddingTop": "8dp",
+                "paddingBottom": "8dp",
+                "marginRight": "20dp",
+                "items": [{
+                  "type": "Text",
+                  "text": "← Back",
+                  "fontSize": "18dp",
+                  "color": "#93C5FD",
+                  "fontWeight": "600"
+                }]
+              }
+            },
+            {
+              "type": "Text",
+              "text": "⚙️ Parent Settings",
+              "fontSize": "26dp",
+              "fontWeight": "700",
+              "color": "#F9FAFB",
+              "grow": 1
+            },
+            {
+              "type": "TouchWrapper",
+              "onPress": {
+                "type": "SendEvent",
+                "arguments": ["addChildFromMenu"]
+              },
+              "item": {
+                "type": "Container",
+                "backgroundColor": "#1D4ED8",
+                "borderRadius": "8dp",
+                "paddingLeft": "16dp",
+                "paddingRight": "16dp",
+                "paddingTop": "8dp",
+                "paddingBottom": "8dp",
+                "items": [{
+                  "type": "Text",
+                  "text": "+ Add Child",
+                  "fontSize": "20dp",
+                  "color": "#DBEAFE",
+                  "fontWeight": "700"
+                }]
+              }
+            }
+          ]
+        },
+
+        {
+          "type": "Sequence",
+          "grow": 1,
+          "scrollDirection": "vertical",
+          "paddingLeft": "24dp",
+          "paddingRight": "24dp",
+          "paddingTop": "16dp",
+          "paddingBottom": "16dp",
+          "data": "${parentData.children}",
+          "firstItem": [
+            {
+              "type": "Container",
+              "when": "${parentData.children.length == 0}",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "paddingTop": "60dp",
+              "items": [{
+                "type": "Text",
+                "text": "No children added yet. Tap '+ Add Child' to get started.",
+                "fontSize": "20dp",
+                "color": "#6B7280",
+                "textAlign": "center"
+              }]
+            }
+          ],
+          "item": {
+            "type": "Container",
+            "backgroundColor": "#1f2937",
+            "borderRadius": "16dp",
+            "borderWidth": "1dp",
+            "borderColor": "#374151",
+            "marginBottom": "16dp",
+            "paddingLeft": "20dp",
+            "paddingRight": "20dp",
+            "paddingTop": "16dp",
+            "paddingBottom": "16dp",
+            "items": [
+
+              {
+                "type": "Container",
+                "direction": "row",
+                "alignItems": "center",
+                "marginBottom": "12dp",
+                "items": [
+                  {
+                    "type": "Text",
+                    "text": "${data.name}",
+                    "fontSize": "22dp",
+                    "fontWeight": "700",
+                    "color": "#F9FAFB",
+                    "grow": 1
+                  },
+                  {
+                    "type": "TouchWrapper",
+                    "onPress": {
+                      "type": "SendEvent",
+                      "arguments": ["addChoreToChild", "${data.childId}"]
+                    },
+                    "item": {
+                      "type": "Container",
+                      "backgroundColor": "#065F46",
+                      "borderRadius": "8dp",
+                      "paddingLeft": "12dp",
+                      "paddingRight": "12dp",
+                      "paddingTop": "6dp",
+                      "paddingBottom": "6dp",
+                      "marginRight": "8dp",
+                      "items": [{
+                        "type": "Text",
+                        "text": "+ Chore",
+                        "fontSize": "18dp",
+                        "color": "#6EE7B7",
+                        "fontWeight": "600"
+                      }]
+                    }
+                  },
+                  {
+                    "type": "TouchWrapper",
+                    "onPress": {
+                      "type": "SendEvent",
+                      "arguments": ["deleteChild", "${data.childId}"]
+                    },
+                    "item": {
+                      "type": "Container",
+                      "backgroundColor": "#7F1D1D",
+                      "borderRadius": "8dp",
+                      "paddingLeft": "12dp",
+                      "paddingRight": "12dp",
+                      "paddingTop": "6dp",
+                      "paddingBottom": "6dp",
+                      "items": [{
+                        "type": "Text",
+                        "text": "Remove",
+                        "fontSize": "18dp",
+                        "color": "#FCA5A5",
+                        "fontWeight": "600"
+                      }]
+                    }
+                  }
+                ]
+              },
+
+              {
+                "type": "Container",
+                "when": "${data.chores.length == 0}",
+                "paddingTop": "4dp",
+                "paddingBottom": "4dp",
+                "items": [{
+                  "type": "Text",
+                  "text": "No chores added. Tap '+ Chore' to add one.",
+                  "fontSize": "14dp",
+                  "color": "#6B7280"
+                }]
+              },
+
+              {
+                "type": "Container",
+                "data": "${data.chores}",
+                "item": {
+                  "type": "Container",
+                  "direction": "row",
+                  "alignItems": "center",
+                  "backgroundColor": "#111827",
+                  "borderRadius": "8dp",
+                  "paddingLeft": "14dp",
+                  "paddingRight": "14dp",
+                  "paddingTop": "10dp",
+                  "paddingBottom": "10dp",
+                  "marginBottom": "6dp",
+                  "items": [
+                    {
+                      "type": "Text",
+                      "text": "• ${data.name}",
+                      "fontSize": "16dp",
+                      "color": "#D1D5DB",
+                      "grow": 1
+                    },
+                    {
+                      "type": "TouchWrapper",
+                      "onPress": {
+                        "type": "SendEvent",
+                        "arguments": ["deleteChore", "${data.choreId}"]
+                      },
+                      "item": {
+                        "type": "Container",
+                        "backgroundColor": "#450A0A",
+                        "borderRadius": "6dp",
+                        "paddingLeft": "10dp",
+                        "paddingRight": "10dp",
+                        "paddingTop": "4dp",
+                        "paddingBottom": "4dp",
+                        "items": [{
+                          "type": "Text",
+                          "text": "✕",
+                          "fontSize": "14dp",
+                          "color": "#FCA5A5"
+                        }]
+                      }
+                    }
+                  ]
+                }
+              }
+
+            ]
+          }
+        },
+
+        {
+          "type": "Container",
+          "backgroundColor": "#0a0f1a",
+          "paddingLeft": "28dp",
+          "paddingRight": "28dp",
+          "paddingTop": "7dp",
+          "paddingBottom": "7dp",
+          "alignItems": "center",
+          "items": [{
+            "type": "Text",
+            "text": "Say \"Alexa, open Chore Pets\" to wake me up",
+            "fontSize": "13dp",
+            "color": "#4B5563",
+            "textAlign": "center"
+          }]
+        }
+
+      ]
+    }
+  }
+}

@@ -45,10 +45,26 @@
               "grow": 1
             },
             {
-              "type": "Text",
-              "text": "Tap a name to see chores",
-              "fontSize": "18dp",
-              "color": "#9CA3AF"
+              "type": "TouchWrapper",
+              "onPress": {
+                "type": "SendEvent",
+                "arguments": ["openParentMenu"]
+              },
+              "item": {
+                "type": "Container",
+                "backgroundColor": "#374151",
+                "borderRadius": "8dp",
+                "paddingLeft": "14dp",
+                "paddingRight": "14dp",
+                "paddingTop": "6dp",
+                "paddingBottom": "6dp",
+                "items": [{
+                  "type": "Text",
+                  "text": "⚙️",
+                  "fontSize": "22dp",
+                  "textAlign": "center"
+                }]
+              }
             }
           ]
         },
@@ -56,19 +72,27 @@
         {
           "type": "Container",
           "grow": 1,
-          "direction": "row",
+          "direction": "column",
           "alignItems": "center",
-          "justifyContent": "center",
           "paddingLeft": "32dp",
           "paddingRight": "32dp",
-          "paddingTop": "24dp",
+          "paddingTop": "16dp",
           "paddingBottom": "24dp",
           "items": [
+            {
+              "type": "Text",
+              "text": "Tap a name to see chores",
+              "fontSize": "22dp",
+              "fontWeight": "600",
+              "color": "#D1D5DB",
+              "textAlign": "center",
+              "paddingBottom": "12dp"
+            },
             {
               "type": "Sequence",
               "scrollDirection": "horizontal",
               "width": "100%",
-              "height": "100%",
+              "grow": 1,
               "alignItems": "center",
               "data": "${homeData.children}",
               "item": {
@@ -147,6 +171,23 @@
               }
             }
           ]
+        },
+
+        {
+          "type": "Container",
+          "backgroundColor": "#0a0f1a",
+          "paddingLeft": "28dp",
+          "paddingRight": "28dp",
+          "paddingTop": "7dp",
+          "paddingBottom": "7dp",
+          "alignItems": "center",
+          "items": [{
+            "type": "Text",
+            "text": "Say \"Alexa, open Chore Pets\" to wake me up",
+            "fontSize": "13dp",
+            "color": "#4B5563",
+            "textAlign": "center"
+          }]
         }
 
       ]
